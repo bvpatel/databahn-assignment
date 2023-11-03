@@ -34,7 +34,7 @@ func loadHandler(c *gin.Context) {
 		return
 	}
 
-	loadService := service.NewLoadService(kafkaDataSource)
+	loadService := service.NewLoadService(kafkaDataSource, appConfig.MaxLimit)
 
 	if err := loadService.LoadData(directoryName, templateFileName, count); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load and process data"})

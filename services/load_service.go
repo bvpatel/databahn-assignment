@@ -3,18 +3,23 @@ package service
 import (
 	dataSource "databahn-api/data_sources"
 	util "databahn-api/utils"
+	"errors"
 	"fmt"
 	"log"
-	"sync"
+	"time"
 )
+
+var wg WaitGroupCount
 
 type LoadService struct {
 	dataSource dataSource.DataSource
+	maxLimit   int64
 }
 
-func NewLoadService(dataSource dataSource.DataSource) *LoadService {
+func NewLoadService(dataSource dataSource.DataSource, maxLimit int64) *LoadService {
 	return &LoadService{
 		dataSource: dataSource,
+		maxLimit:   maxLimit,
 	}
 }
 
@@ -27,45 +32,45 @@ func (ls *LoadService) LoadData(directoryName, templateFileName string, count in
 		return err
 	}
 
-	var wg sync.WaitGroup
-	errChan := make(chan error, count)
+	log.Printf("WG count: %d, Limit: %d", wg.GetCount(), ls.maxLimit)
+	if wg.GetCount() >= ls.maxLimit {
+		return errors.New("server is reached in max capacity, Please try again after sometime")
+	}
 
 	for i := 0; i < count; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			renderedContent, err := util.RenderTemplate(templateContent, nil)
-			log.Printf("Render contents: %s", renderedContent)
+			// log.Printf("Render contents: %s", renderedContent)
 			if err != nil {
-				errChan <- err
 				log.Printf("Error rendering template: count=%d, template=%s, error=%v\n", count, templateFileName, err)
 				return
 			}
-
+			time.Sleep(10 * time.Second)
 			go func() {
 				if err := ls.dataSource.PushData(renderedContent); err != nil {
-					errChan <- err
 					log.Printf("Error pushing data to data source: count=%d, template=%s, error=%v\n", count, templateFileName, err)
 				}
 			}()
 		}()
 	}
 
-	go func() {
-		wg.Wait()
-		close(errChan)
-	}()
+	// go func() {
+	// 	wg.Wait()
+	// 	close(errChan)
 
-	var errors []error
-	for err := range errChan {
-		errors = append(errors, err)
-	}
+	// 	var errors []error
+	// 	for err := range errChan {
+	// 		errors = append(errors, err)
+	// 	}
 
-	if len(errors) > 0 {
-		errMsg := fmt.Sprintf("Encountered %d errors: count=%d, template=%s", len(errors), count, templateFileName)
-		log.Println(errMsg)
-		return fmt.Errorf(errMsg)
-	}
+	// 	if len(errors) > 0 {
+	// 		errMsg := fmt.Sprintf("Encountered %d errors: count=%d, template=%s", len(errors), count, templateFileName)
+	// 		log.Println(errMsg)
+	// 	}
+
+	// }()
 
 	return nil
 }
