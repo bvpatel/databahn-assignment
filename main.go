@@ -9,8 +9,8 @@ import (
 func main() {
 	r := gin.Default()
 
-	routes.SetupHealthRoutes(r)
 	routes.SetupLoadRoutes(r)
+	routes.SetupHealthRoutes(r)
 
 	r.Run(":8080")
 }

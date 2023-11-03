@@ -13,11 +13,11 @@ import (
 func SetupLoadRoutes(router *gin.Engine) {
 	loadRoute := router.Group("/load")
 	{
-		loadRoute.GET("/:directory_name/:template_file_name", loadTemplate)
+		loadRoute.GET("/:directory_name/:template_file_name", loadHandler)
 	}
 }
 
-func loadTemplate(c *gin.Context) {
+func loadHandler(c *gin.Context) {
 	directoryName := c.Param("directory_name")
 	templateFileName := c.Param("template_file_name")
 	countParam := c.DefaultQuery("count", "1")

@@ -7,11 +7,11 @@ import (
 )
 
 func SetupHealthRoutes(router *gin.Engine) {
-	router.GET("/health", healthHandler)
+	router.GET("/ping", healthHandler)
 }
 
 func healthHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"status": "healthy",
+		"message": "pong",
 	})
 }
