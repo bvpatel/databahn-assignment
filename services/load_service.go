@@ -4,6 +4,7 @@ import (
 	dataSource "databahn-api/data_sources"
 	util "databahn-api/utils"
 	"fmt"
+	"log"
 	"sync"
 )
 
@@ -19,8 +20,10 @@ func NewLoadService(dataSource dataSource.DataSource) *LoadService {
 
 func (ls *LoadService) LoadData(directoryName, templateFileName string, count int) error {
 	filePath := fmt.Sprintf("%s/%s/%s", ".", directoryName, templateFileName)
+	log.Printf("Filepath: %s, count: %d", filePath, count)
 	templateContent, err := util.ReadTemplateFile(filePath)
 	if err != nil {
+		log.Printf("Error reading template file: count=%d, template=%s, error=%v\n", count, templateFileName, err)
 		return err
 	}
 
@@ -32,14 +35,17 @@ func (ls *LoadService) LoadData(directoryName, templateFileName string, count in
 		go func() {
 			defer wg.Done()
 			renderedContent, err := util.RenderTemplate(templateContent, nil)
+			log.Printf("Render contents: %s", renderedContent)
 			if err != nil {
 				errChan <- err
+				log.Printf("Error rendering template: count=%d, template=%s, error=%v\n", count, templateFileName, err)
 				return
 			}
 
 			go func() {
 				if err := ls.dataSource.PushData(renderedContent); err != nil {
 					errChan <- err
+					log.Printf("Error pushing data to data source: count=%d, template=%s, error=%v\n", count, templateFileName, err)
 				}
 			}()
 		}()
@@ -56,7 +62,9 @@ func (ls *LoadService) LoadData(directoryName, templateFileName string, count in
 	}
 
 	if len(errors) > 0 {
-		return fmt.Errorf("Encountered %d errors", len(errors))
+		errMsg := fmt.Sprintf("Encountered %d errors: count=%d, template=%s", len(errors), count, templateFileName)
+		log.Println(errMsg)
+		return fmt.Errorf(errMsg)
 	}
 
 	return nil
