@@ -3,6 +3,7 @@ package service
 import (
 	dataSource "databahn-api/data_sources"
 	util "databahn-api/utils"
+	utils "databahn-api/utils"
 	"errors"
 	"fmt"
 	"log"
@@ -10,6 +11,8 @@ import (
 )
 
 var wg WaitGroupCount
+var readTemplateFile = utils.ReadTemplateFile
+var renderTemplate = util.RenderTemplate
 
 type LoadService struct {
 	dataSource dataSource.DataSource
@@ -26,7 +29,7 @@ func NewLoadService(dataSource dataSource.DataSource, maxLimit int64) *LoadServi
 func (ls *LoadService) LoadData(directoryName, templateFileName string, count int) error {
 	filePath := fmt.Sprintf("%s/%s/%s", ".", directoryName, templateFileName)
 	log.Printf("Filepath: %s, count: %d", filePath, count)
-	templateContent, err := util.ReadTemplateFile(filePath)
+	templateContent, err := readTemplateFile(filePath)
 	if err != nil {
 		log.Printf("Error reading template file: count=%d, template=%s, error=%v\n", count, templateFileName, err)
 		return err
@@ -41,7 +44,7 @@ func (ls *LoadService) LoadData(directoryName, templateFileName string, count in
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			renderedContent, err := util.RenderTemplate(templateContent, nil)
+			renderedContent, err := renderTemplate(templateContent, nil)
 			// log.Printf("Render contents: %s", renderedContent)
 			if err != nil {
 				log.Printf("Error rendering template: count=%d, template=%s, error=%v\n", count, templateFileName, err)
