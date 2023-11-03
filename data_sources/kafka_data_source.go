@@ -8,6 +8,7 @@ import (
 
 type KafkaDataSource struct {
 	kafkaProducer *kafka.Producer
+	kafkaTopic    *string
 }
 
 func NewKafkaDataSource(config *config.Config) (*KafkaDataSource, error) {
@@ -17,6 +18,7 @@ func NewKafkaDataSource(config *config.Config) (*KafkaDataSource, error) {
 	}
 	return &KafkaDataSource{
 		kafkaProducer: kafkaProducer,
+		kafkaTopic:    &config.KafkaTopic,
 	}, nil
 }
 
@@ -33,7 +35,7 @@ func createKafkaProducer(config *config.Config) (*kafka.Producer, error) {
 
 func (ds *KafkaDataSource) PushData(data string) error {
 	message := &kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &config.KafkaTopic, Partition: kafka.PartitionAny},
+		TopicPartition: kafka.TopicPartition{Topic: ds.kafkaTopic, Partition: kafka.PartitionAny},
 		Value:          []byte(data),
 	}
 	if err := ds.kafkaProducer.Produce(message, nil); err != nil {

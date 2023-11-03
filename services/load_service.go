@@ -11,7 +11,7 @@ type LoadService struct {
 	dataSource dataSource.DataSource
 }
 
-func NewLoadService(dataSource data.DataSource) *LoadService {
+func NewLoadService(dataSource dataSource.DataSource) *LoadService {
 	return &LoadService{
 		dataSource: dataSource,
 	}

@@ -2,15 +2,15 @@ package routes
 
 import (
 	"databahn-api/config"
-	"databahn-api/data"
-	"databahn-api/service"
+	dataSource "databahn-api/data_sources"
+	service "databahn-api/services"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-func SetupLoadRoute(router *gin.Engine) {
+func SetupLoadRoutes(router *gin.Engine) {
 	loadRoute := router.Group("/load")
 	{
 		loadRoute.GET("/:directory_name/:template_file_name", loadTemplate)
@@ -28,15 +28,15 @@ func loadTemplate(c *gin.Context) {
 	}
 
 	appConfig := config.NewConfig()
-	kafkaDataSource, err := data.NewKafkaDataSource(appConfig)
+	kafkaDataSource, err := dataSource.NewKafkaDataSource(appConfig)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Kafka data source"})
 		return
 	}
 
-	loadService := service.NewLoadService(kafkaDataSource, count)
+	loadService := service.NewLoadService(kafkaDataSource)
 
-	if err := loadService.LoadData(directoryName, templateContent); err != nil {
+	if err := loadService.LoadData(directoryName, templateFileName, count); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load and process data"})
 		return
 	}
